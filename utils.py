@@ -8,6 +8,7 @@ from skmultilearn.model_selection import iterative_train_test_split
 from sklearn.model_selection import train_test_split
 
 BATCH_SIZE = 32
+SHUFFLE_BUFFER_SIZE = 64
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
 
@@ -22,6 +23,8 @@ def parse_function(filename, label):
 def create_dataset(filenames, labels):
     dataset = tf.data.Dataset.from_tensor_slices((filenames, labels))
     dataset = dataset.map(parse_function, num_parallel_calls=AUTOTUNE)
+    # dataset = dataset.cache()
+    dataset = dataset.shuffle(buffer_size=SHUFFLE_BUFFER_SIZE)
     dataset = dataset.batch(BATCH_SIZE)
     dataset = dataset.prefetch(buffer_size=AUTOTUNE)
 
@@ -44,15 +47,15 @@ def create_model(number_of_classes):
             data_augmentation,
             layers.Conv2D(16, 5, padding="same", activation="relu"),
             layers.MaxPooling2D(),
-            layers.Dropout(0.1),
+            layers.Dropout(0.05),
             layers.Conv2D(32, 5, padding="same", activation="relu"),
             layers.MaxPooling2D(),
-            layers.Dropout(0.2),
+            layers.Dropout(0.1),
             layers.Conv2D(64, 5, padding="same", activation="relu"),
             layers.MaxPooling2D(),
             layers.Flatten(),
             layers.Dense(128, activation="relu"),
-            layers.Dropout(0.5),
+            layers.Dropout(0.25),
             layers.Dense(64, activation="relu"),
             layers.Dense(number_of_classes, name="outputs", activation="sigmoid"),
         ]
