@@ -107,8 +107,9 @@ def create_model(number_of_classes):
         metrics=[
             "accuracy",
             "mae",
+            "mse",
+            # "binary_crossentropy",
             macro_f1
-            #tf.keras.metrics.F1Score(threshold=0.5, average="macro"),
         ],
     )
 
