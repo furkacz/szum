@@ -42,7 +42,7 @@ history = model.fit(
     callbacks=[model_checkpoint],
 )
 
-model.evaluate(test_dataset)
+# model.evaluate(test_dataset)
 
 # save history
 import json
