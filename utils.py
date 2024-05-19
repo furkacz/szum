@@ -7,9 +7,51 @@ import os
 from skmultilearn.model_selection import iterative_train_test_split
 from sklearn.model_selection import train_test_split
 
-BATCH_SIZE = 32
+BATCH_SIZE = 128
+SHUFFLE_BUFFER_SIZE = 512
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 
+@tf.function
+def macro_soft_f1(y, y_hat):
+    """Compute the macro soft F1-score as a cost (average 1 - soft-F1 across all labels).
+    Use probability values instead of binary predictions.
+    
+    Args:
+        y (int32 Tensor): targets array of shape (BATCH_SIZE, N_LABELS)
+        y_hat (float32 Tensor): probability matrix from forward propagation of shape (BATCH_SIZE, N_LABELS)
+        
+    Returns:
+        cost (scalar Tensor): value of the cost function for the batch
+    """
+    y = tf.cast(y, tf.float32)
+    y_hat = tf.cast(y_hat, tf.float32)
+    tp = tf.reduce_sum(y_hat * y, axis=0)
+    fp = tf.reduce_sum(y_hat * (1 - y), axis=0)
+    fn = tf.reduce_sum((1 - y_hat) * y, axis=0)
+    soft_f1 = 2*tp / (2*tp + fn + fp + 1e-16)
+    cost = 1 - soft_f1 # reduce 1 - soft-f1 in order to increase soft-f1
+    macro_cost = tf.reduce_mean(cost) # average on all labels
+    return macro_cost
+
+@tf.function
+def macro_f1(y, y_hat, thresh=0.5):
+    """Compute the macro F1-score on a batch of observations (average F1 across labels)
+    
+    Args:
+        y (int32 Tensor): labels array of shape (BATCH_SIZE, N_LABELS)
+        y_hat (float32 Tensor): probability matrix from forward propagation of shape (BATCH_SIZE, N_LABELS)
+        thresh: probability value above which we predict positive
+        
+    Returns:
+        macro_f1 (scalar Tensor): value of macro F1 for the batch
+    """
+    y_pred = tf.cast(tf.greater(y_hat, thresh), tf.float32)
+    tp = tf.cast(tf.math.count_nonzero(y_pred * y, axis=0), tf.float32)
+    fp = tf.cast(tf.math.count_nonzero(y_pred * (1 - y), axis=0), tf.float32)
+    fn = tf.cast(tf.math.count_nonzero((1 - y_pred) * y, axis=0), tf.float32)
+    f1 = 2*tp / (2*tp + fn + fp + 1e-16)
+    macro_f1 = tf.reduce_mean(f1)
+    return macro_f1
 
 def parse_function(filename, label):
     img = tf.io.read_file(filename)
@@ -17,19 +59,16 @@ def parse_function(filename, label):
     img = tf.image.convert_image_dtype(img, tf.float32)
     img = tf.image.resize(img, [256, 256])
     return img, label
-
-
 def create_dataset(filenames, labels):
     dataset = tf.data.Dataset.from_tensor_slices((filenames, labels))
     dataset = dataset.map(parse_function, num_parallel_calls=AUTOTUNE)
+    #dataset = dataset.cache()
+    dataset = dataset.shuffle(buffer_size=SHUFFLE_BUFFER_SIZE)
     dataset = dataset.batch(BATCH_SIZE)
     dataset = dataset.prefetch(buffer_size=AUTOTUNE)
 
     return dataset
-
-
 def create_model(number_of_classes):
-
     data_augmentation = tf.keras.Sequential(
         [
             layers.RandomFlip("horizontal"),
@@ -38,22 +77,22 @@ def create_model(number_of_classes):
             layers.RandomContrast(0.5),
         ]
     )
-
     model = tf.keras.Sequential(
         [
             data_augmentation,
             layers.Conv2D(16, 5, padding="same", activation="relu"),
             layers.MaxPooling2D(),
-            layers.Dropout(0.1),
+            #layers.Dropout(0.05),
             layers.Conv2D(32, 5, padding="same", activation="relu"),
             layers.MaxPooling2D(),
-            layers.Dropout(0.2),
+            #layers.Dropout(0.1),
             layers.Conv2D(64, 5, padding="same", activation="relu"),
             layers.MaxPooling2D(),
             layers.Flatten(),
-            layers.Dense(128, activation="relu"),
-            layers.Dropout(0.5),
-            layers.Dense(64, activation="relu"),
+            #layers.Dense(256, activation="relu"),
+            
+            layers.Dense(256, activation="relu"),
+            layers.Dropout(0.4),
             layers.Dense(number_of_classes, name="outputs", activation="sigmoid"),
         ]
     )
@@ -64,11 +103,12 @@ def create_model(number_of_classes):
 
     model.compile(
         optimizer=adam,
-        loss=tf.losses.BinaryCrossentropy(),
+        loss=macro_soft_f1,
         metrics=[
             "accuracy",
             "mae",
-            tf.keras.metrics.F1Score(threshold=0.5, average="macro"),
+            macro_f1
+            #tf.keras.metrics.F1Score(threshold=0.5, average="macro"),
         ],
     )
 

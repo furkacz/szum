@@ -23,6 +23,8 @@ history = json.load(open(f"{name}/history.json", "r"))
 fig, ax = plt.subplots(figsize=(20, 10), nrows=2, ncols=2)
 fig.suptitle(f"{name} metrics")
 
+print(list(history.keys()))
+
 ax[0, 0].plot(history["accuracy"])
 ax[0, 0].plot(history["val_accuracy"])
 ax[0, 0].set_title("Accuracy")
@@ -33,8 +35,8 @@ ax[0, 1].plot(history["val_loss"])
 ax[0, 1].set_title("Loss")
 ax[0, 1].legend(["train", "val"])
 
-ax[1, 0].plot(history["f1_score"])
-ax[1, 0].plot(history["val_f1_score"])
+ax[1, 0].plot(history["macro_f1"])
+ax[1, 0].plot(history["val_macro_f1"])
 ax[1, 0].set_title("F1 score")
 ax[1, 0].legend(["train", "val"])
 

@@ -24,12 +24,12 @@ model = create_model(len(labels))
 
 model_checkpoint = tf.keras.callbacks.ModelCheckpoint(
     filepath=name + "/model/{epoch:02d}-{val_loss:.2f}.keras",
-    monitor="val_f1_score",
+    monitor="val_macro_f1",
     verbose=1,
 )
 
 early_stopping = tf.keras.callbacks.EarlyStopping(
-    monitor="val_f1_score", patience=5, verbose=1, start_from_epoch=0
+    monitor="val_macro_f1", patience=5, verbose=1, start_from_epoch=0
 )
 
 history = model.fit(
