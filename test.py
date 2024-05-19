@@ -64,7 +64,7 @@ if args.model:
     model = create_model(len(labels))
     model.load_weights(f"{name}/model/{args.model}")
 
-    model.evaluate(test_dataset)
+    model.evaluate(val_dataset)
 else:
     results = []
 
@@ -75,7 +75,7 @@ else:
         model = create_model(len(labels))
         model.load_weights(f"{name}/model/{model_name}")
 
-        loss, accuracy, mae, f1 = model.evaluate(test_dataset)
+        loss, accuracy, mae, f1 = model.evaluate(val_dataset)
         results.append((model_name, loss, accuracy, mae, f1))
 
     results = sorted(results, key=lambda x: x[-1], reverse=True)

@@ -32,7 +32,7 @@ from sklearn.preprocessing import MultiLabelBinarizer
 
 mlb = MultiLabelBinarizer()
 xfiles = files.to_numpy()[..., np.newaxis]
-ylabels = mlb.fit_transform(labels)
+ylabels = mlb.fit_transform(labels).astype('float32')
 
 if RANDOM_AND_ITERATIVE:
     split_and_save(xfiles, ylabels, 0.2, "split1-random", random_state=RANDOM_SEED, iterative=False)

@@ -23,9 +23,12 @@ test_dataset = create_dataset(x_test, y_test)
 model = create_model(len(labels))
 
 model_checkpoint = tf.keras.callbacks.ModelCheckpoint(
-    filepath=name + "/model/{epoch:02d}-{val_loss:.2f}.keras",
+    filepath=name + "/model/best.keras",
     monitor="val_macro_f1",
     verbose=1,
+    mode='max',
+    save_best_only=True,
+    initial_value_threshold=0.0
 )
 
 early_stopping = tf.keras.callbacks.EarlyStopping(
