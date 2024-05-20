@@ -32,14 +32,14 @@ model_checkpoint = tf.keras.callbacks.ModelCheckpoint(
 )
 
 early_stopping = tf.keras.callbacks.EarlyStopping(
-    monitor="val_macro_f1", patience=5, verbose=1, start_from_epoch=0
+    monitor="val_macro_f1", patience=5, verbose=1, start_from_epoch=0, mode='max'
 )
 
 history = model.fit(
     train_dataset,
     validation_data=val_dataset,
     epochs=args.epochs,
-    callbacks=[model_checkpoint],
+    callbacks=[model_checkpoint, early_stopping],
 )
 
 # model.evaluate(test_dataset)
