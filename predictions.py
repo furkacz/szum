@@ -19,9 +19,9 @@ x_train, y_train = train['id'].to_list(), train['labels'].to_list()
 x_val, y_val = val['id'].to_list(), val['labels'].to_list()
 x_test, y_test = test['id'].to_list(), test['labels'].to_list()
 
-train_dataset = create_dataset(x_train, y_train)
-val_dataset = create_dataset(x_val, y_val)
-test_dataset = create_dataset(x_test, y_test)
+train_dataset = create_dataset(x_train, y_train, is_training=False)
+val_dataset = create_dataset(x_val, y_val, is_training=False)
+test_dataset = create_dataset(x_test, y_test, is_training=False)
 
 model = create_model(len(labels))
 model.load_weights(args.model)

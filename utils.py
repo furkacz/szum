@@ -59,11 +59,12 @@ def parse_function(filename, label):
     img = tf.image.convert_image_dtype(img, tf.float32)
     img = tf.image.resize(img, [256, 256])
     return img, label
-def create_dataset(filenames, labels):
+def create_dataset(filenames, labels, is_training=True):
     dataset = tf.data.Dataset.from_tensor_slices((filenames, labels))
     dataset = dataset.map(parse_function, num_parallel_calls=AUTOTUNE)
-    #dataset = dataset.cache()
-    dataset = dataset.shuffle(buffer_size=SHUFFLE_BUFFER_SIZE)
+    if is_training:
+        #dataset = dataset.cache()
+        dataset = dataset.shuffle(buffer_size=SHUFFLE_BUFFER_SIZE)
     dataset = dataset.batch(BATCH_SIZE)
     dataset = dataset.prefetch(buffer_size=AUTOTUNE)
 
